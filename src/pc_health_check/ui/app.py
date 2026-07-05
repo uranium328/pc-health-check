@@ -231,8 +231,8 @@ def main() -> int:
             min_size=WINDOW_MIN_SIZE,
         )
         window.events.closed += _on_window_closed
-        # 明確指定 edgechromium（WebView2）後端，對應 docs/ui-framework-options.md
-        # 的 Windows 選型決策。固定後端而非讓 pywebview 自動偵測，可避免
+        # 明確指定 edgechromium（WebView2）後端，對應 Windows 選型決策。
+        # 固定後端而非讓 pywebview 自動偵測，可避免
         # PyInstaller 打包時把開發機上剛好裝著、但本專案不會用到的其他後端
         # （例如 GPL 授權的 PyQt5）誤判成相依套件一併打包進 exe。
         webview.start(gui="edgechromium")

@@ -15,7 +15,7 @@ HKCU 底下的解除安裝機碼（讓「新增或移除程式」看得到）。
 登錄機碼寫入這類「安裝一個應用程式」的標準動作。PawnIO 驅動（唯讀感測用途）
 只用訊息視窗提示使用者自行至官方網站安裝，不自動下載或執行任何驅動安裝程式。
 
-跟 Inno Setup/NSIS 相比的已知取捨（見 ops/lessons.md、docs/build-feasibility.md）：
+跟 Inno Setup/NSIS 相比的已知取捨：
 沒有標準精靈 UI、升級/覆蓋安裝判斷陽春（只能覆蓋複製）、不支援多語系、
 沒有簽章與 SmartScreen 信譽累積、解除安裝靠固定清單而非掃描殘留機碼、
 解除安裝不會刪掉安裝目錄本身與 `Uninstall.exe`（見下方 `uninstall()` 說明）。
@@ -54,8 +54,8 @@ _IDYES = 6
 def _ensure_utf8_console() -> None:
     """比照 main.py/app.py 的同名函式：避免 Windows 主控台編碼不一致造成中文亂碼
 
-    （見 ops/lessons.md L-003：本機 Python 偵測到的 stdout 編碼可能是 cp950，
-    與主控台 codepage 顯示不一致，不能只印 ASCII 就假設中文輸出沒問題）。
+    本機 Python 偵測到的 stdout 編碼可能是 cp950，與主控台 codepage 顯示
+    不一致，不能只印 ASCII 就假設中文輸出沒問題。
     """
     for stream in (sys.stdout, sys.stderr):
         try:

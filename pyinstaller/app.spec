@@ -7,7 +7,7 @@
 只打包 GUI 進入點（ui/app.py）；CLI（main.py）不在打包範圍內，維持給開發者
 用 `python src/pc_health_check/main.py` 執行。
 
-可行性依據見 docs/build-feasibility.md：MS Store 版 Python 3.13 可直接建置，
+可行性依據：MS Store 版 Python 3.13 可直接建置，
 `collect_all("HardwareMonitor")` 已足夠收齊其原生 DLL，不需要額外自訂 hook。
 """
 
@@ -23,9 +23,8 @@ _WEB_SRC = os.path.join(_SRC_DIR, "pc_health_check", "ui", "web")
 _hm_datas, _hm_binaries, _hm_hiddenimports = collect_all("HardwareMonitor")
 
 # pywebview 在 Windows 上支援多種後端（edgechromium/cef/qt/gtk/mshtml），
-# 打包時預設會把「開發機上剛好裝著」的後端都當成潛在相依收進去。本專案已
-# 在 docs/ui-framework-options.md 定案只用 edgechromium（WebView2），且明確
-# 選用 pywebview 是為了保持 BSD 授權乾淨（見 ops/lessons.md L-005）；PyQt5
+# 打包時預設會把「開發機上剛好裝著」的後端都當成潛在相依收進去。本專案只
+# 用 edgechromium（WebView2），且明確選用 pywebview 是為了保持 BSD 授權乾淨；PyQt5
 # 屬 GPL/商業雙授權，QtWebKitWidgets 等 Qt 元件不得混進最終發布的 exe，故
 # 在此明確排除，不依賴「剛好沒裝」這種脆弱假設。
 _EXCLUDED_GUI_BACKENDS = [

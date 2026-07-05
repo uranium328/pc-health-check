@@ -4,8 +4,8 @@
 # 用法（在專案根目錄執行）：
 #   powershell -File build_scripts\build.ps1
 #
-# 依據 docs/build-feasibility.md：本機 MS Store 版 Python 已驗證可直接建置，
-# 這裡固定呼叫 `python`，若未來改用 python.org 建置 venv，只需改這一行。
+# 本機 MS Store 版 Python 已驗證可直接建置，這裡固定呼叫 `python`，
+# 若未來改用 python.org 建置 venv，只需改這一行。
 $ErrorActionPreference = "Stop"
 
 $ProjectRoot = Split-Path -Parent $PSScriptRoot
