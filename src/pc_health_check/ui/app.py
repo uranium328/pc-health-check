@@ -27,11 +27,19 @@ import sys
 # main.py 的 `_SRC_DIR` 處理（此檔比 main.py 多巢狀一層 ui/ 目錄，因此多
 # 一次 dirname）。專案目前未走 `pip install -e .` 安裝流程，這是骨架階段
 # 刻意的簡化作法。
-_SRC_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-if _SRC_DIR not in sys.path:
-    sys.path.insert(0, _SRC_DIR)
+#
+# 經 PyInstaller 打包凍結後（`sys.frozen` 為 True），`pc_health_check` 套件
+# 已隨 PYZ 一併打包、可直接 import，不需要也不應該手動塞 sys.path；靜態
+# 資源（ui/web 底下的 index.html 等）則改用 `pyinstaller/app.spec` 的
+# `datas` 設定，複製到 `sys._MEIPASS` 底下相同的相對路徑結構。
+if getattr(sys, "frozen", False):
+    _WEB_DIR = os.path.join(sys._MEIPASS, "pc_health_check", "ui", "web")  # type: ignore[attr-defined]
+else:
+    _SRC_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    if _SRC_DIR not in sys.path:
+        sys.path.insert(0, _SRC_DIR)
+    _WEB_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "web")
 
-_WEB_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "web")
 _INDEX_HTML = os.path.join(_WEB_DIR, "index.html")
 
 APP_TITLE = "電腦硬體健康檢測"
@@ -223,7 +231,11 @@ def main() -> int:
             min_size=WINDOW_MIN_SIZE,
         )
         window.events.closed += _on_window_closed
-        webview.start()
+        # 明確指定 edgechromium（WebView2）後端，對應 docs/ui-framework-options.md
+        # 的 Windows 選型決策。固定後端而非讓 pywebview 自動偵測，可避免
+        # PyInstaller 打包時把開發機上剛好裝著、但本專案不會用到的其他後端
+        # （例如 GPL 授權的 PyQt5）誤判成相依套件一併打包進 exe。
+        webview.start(gui="edgechromium")
         return 0
     except Exception as exc:  # noqa: BLE001 - 鐵律：不得讓使用者看到 traceback
         print("=" * 60, file=sys.stderr)
@@ -234,5 +246,30 @@ def main() -> int:
         return 1
 
 
+def _run_selftest() -> int:
+    """免開視窗的自我檢查：供打包後的自動化煙霧測試使用（見 build_scripts/smoke_test.ps1）。
+
+    只確認「靜態資源找得到路徑」與「資料層流程跑得完不崩潰」兩件事，不驗證
+    實際硬體感測數值是否正確——那必須在真實硬體上人工核對。
+    """
+    _ensure_utf8_console()
+
+    if not os.path.isfile(_INDEX_HTML):
+        print(f"selftest 失敗：找不到 {_INDEX_HTML}", file=sys.stderr)
+        return 1
+
+    payload = build_report_payload()
+    if not isinstance(payload, dict) or "generated_at" not in payload:
+        print("selftest 失敗：build_report_payload() 回傳格式不符預期", file=sys.stderr)
+        return 1
+
+    print("selftest ok")
+    print(f"index_html={_INDEX_HTML}")
+    print(f"report_ok={payload.get('ok')}")
+    return 0
+
+
 if __name__ == "__main__":
+    if "--selftest" in sys.argv:
+        sys.exit(_run_selftest())
     sys.exit(main())
