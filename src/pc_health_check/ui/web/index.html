@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>電腦硬體健康檢測</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <div class="topbar-brand">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+          stroke-linecap="round" stroke-linejoin="round" width="28" height="28" aria-hidden="true" focusable="false">
+          <path d="M22 12h-2.48a2 2 0 0 0-1.93 1.46l-2.35 8.36a.25.25 0 0 1-.48 0L9.24 2.18a.25.25 0 0 0-.48 0l-2.35 8.36A2 2 0 0 1 4.49 12H2" />
+        </svg>
+        <h1>電腦硬體健康檢測</h1>
+      </div>
+      <div class="topbar-actions">
+        <span class="last-updated">最後更新：<span id="last-updated-time">--:--:--</span></span>
+        <button id="refresh-btn" class="btn-refresh" type="button">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+            <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8" />
+            <path d="M21 3v5h-5" />
+            <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16" />
+            <path d="M8 16H3v5" />
+          </svg>
+          <span class="btn-refresh-label">重新整理</span>
+        </button>
+      </div>
+    </header>
+
+    <section id="overall-banner" class="banner overall-banner" role="status" aria-live="polite">
+      <span class="banner-text">載入中…</span>
+    </section>
+
+    <section id="info-banner" class="banner info-banner" role="status" aria-live="polite" hidden></section>
+
+    <main id="cards-grid" class="cards-grid" aria-busy="true" aria-live="polite">
+      <!-- 六張元件卡片（CPU/主機板/記憶體/硬碟/電源供應器/顯示卡）
+           由 script.js 依 report.py/health.py 現有資料動態產生 -->
+    </main>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>

@@ -1,0 +1,27 @@
+# 改檔前備份（見 CLAUDE.md 硬規則 2）：有了 git history 之後不需要再進 commit
+*.bak
+*.bak-*
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+
+# 虛擬環境
+.venv/
+venv/
+env/
+
+# PyInstaller 打包產物（見 docs/ui-framework-options.md，正式打包前需煙霧測試）
+build/
+dist/
+
+# 編輯器 / 作業系統雜訊
+.vscode/
+.idea/
+Thumbs.db
+.DS_Store
+
+# 記憶體/健康檢測跑出來的暫存報告或 log（若日後落地成檔案）
+*.log

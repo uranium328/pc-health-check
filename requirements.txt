@@ -1,0 +1,6 @@
+HardwareMonitor  # PyPI 套件，透過 pythonnet 綁定 LibreHardwareMonitorLib.dll，提供主機板/GPU/硬碟等統一硬體感測讀取（本專案核心感測引擎，見 engine.py）
+pythonnet  # 讓 Python 能載入並呼叫 LibreHardwareMonitor 的 .NET DLL；在 Microsoft Store 版 Python 上的相容性尚未於本機驗證，見 docs/setup.md
+wmi  # 包裝 Windows WMI，用於唯讀讀取記憶體（Win32_PhysicalMemory）等系統庫存資訊
+pywin32  # `wmi` 套件底層相依的 Windows COM/WMI bindings
+nvidia-ml-py  # 可選：NVIDIA 官方 NVML 綁定（import 名稱為 pynvml），用於補充 NVIDIA GPU 專屬細節；非 NVIDIA 環境或未安裝時會優雅降級，不影響其他功能
+pywebview  # 桌面 GUI 骨架（src/pc_health_check/ui/app.py）用來把 report.py/health.py 的健康報告以本地 HTML/CSS/JS 儀表板呈現；只讀取既有資料層，不涉及任何硬體寫入操作

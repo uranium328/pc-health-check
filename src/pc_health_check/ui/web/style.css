@@ -1,0 +1,550 @@
+/* 電腦硬體健康檢測儀表板 — 樣式表
+ *
+ * 依 docs/ui-design-spec.md 逐條實作，不另外發揮風格。
+ * 字體：優先 Google Fonts 線上載入 Lexend + Source Sans 3；離線或無網路時，
+ * fallback 到系統字體 "Segoe UI", "Microsoft JhengHei", sans-serif，
+ * 確保離線時整頁不會沒有字型可用。
+ *
+ * 新增 CPU 卡片時的說明：本檔對每個元件卡片（CPU/主機板/記憶體/硬碟/
+ * 電源供應器/顯示卡）一律共用同一組 `.card`/`.card-header`/`.metric-row`/
+ * `.badge` 等通用 class，未曾針對個別元件另外定義專屬選擇器（例如沒有
+ * `.card-gpu`、`.card-motherboard` 這類寫法）。CPU 卡片的圖示/資料完全由
+ * script.js 動態產生後套用這組既有通用樣式即可正確顯示，因此本檔本身
+ * 不需要、也刻意不新增任何 CPU 專屬的 CSS 規則。
+ */
+
+@import url('https://fonts.googleapis.com/css2?family=Lexend:wght@400;500;600;700&family=Source+Sans+3:wght@400;500;600&display=swap');
+
+:root {
+  /* 亮色模式（預設） */
+  --bg: #ECFEFF;
+  --card-bg: #FFFFFF;
+  --fg: #164E63;
+  --fg-muted: #64748B;
+  --border: #A5F3FC;
+  --primary: #0891B2;
+  --primary-fg: #FFFFFF;
+  --accent: #059669;
+
+  --card-shadow: 0 1px 3px rgba(0, 0, 0, .08);
+
+  /* 狀態徽章：亮色（文字/圖示色 + 低透明度背景色塊） */
+  --status-normal-fg: #059669;
+  --status-normal-bg: rgba(5, 150, 105, 0.12);
+  --status-attention-fg: #D97706;
+  --status-attention-bg: rgba(217, 119, 6, 0.12);
+  --status-critical-fg: #DC2626;
+  --status-critical-bg: rgba(220, 38, 38, 0.12);
+  --status-unavailable-fg: #64748B;
+  --status-unavailable-bg: rgba(100, 116, 139, 0.12);
+
+  /* 中性提示橫幅（非 admin／缺 PawnIO 等資訊語氣，刻意不用狀態色） */
+  --info-fg: #0E7490;
+  --info-bg: rgba(8, 145, 178, 0.08);
+
+  --font-heading: 'Lexend', 'Segoe UI', 'Microsoft JhengHei', sans-serif;
+  --font-body: 'Source Sans 3', 'Segoe UI', 'Microsoft JhengHei', sans-serif;
+
+  --transition-fast: 180ms ease-out;
+  --transition-normal: 240ms ease-out;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0F172A;
+    --card-bg: #1B2336;
+    --fg: #F8FAFC;
+    --fg-muted: #94A3B8;
+    --border: #475569;
+    --primary: #22D3EE;
+    --primary-fg: #0F172A;
+    --accent: #22C55E;
+
+    --card-shadow: 0 1px 3px rgba(0, 0, 0, .4);
+
+    --status-normal-fg: #22C55E;
+    --status-normal-bg: rgba(34, 197, 94, 0.16);
+    --status-attention-fg: #F59E0B;
+    --status-attention-bg: rgba(245, 158, 11, 0.16);
+    --status-critical-fg: #EF4444;
+    --status-critical-bg: rgba(239, 68, 68, 0.16);
+    --status-unavailable-fg: #94A3B8;
+    --status-unavailable-bg: rgba(148, 163, 184, 0.16);
+
+    --info-fg: #67E8F9;
+    --info-bg: rgba(34, 211, 238, 0.10);
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+}
+
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+  /* 小螢幕（例如視窗縮到 375px 寬）不允許橫向捲動 */
+  overflow-x: hidden;
+}
+
+h1, h2, h3 {
+  font-family: var(--font-heading);
+  color: var(--fg);
+  margin: 0;
+}
+
+.app {
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+/* 統一單一 SVG 線性圖示風格：所有圖示（無論是 index.html 內嵌的靜態圖示，
+ * 或是 script.js 動態產生的圖示）一律套用 .icon class，這裡集中控制粗細，
+ * CSS 的 stroke-width 屬性會覆蓋 SVG 上的 stroke-width 屬性值（presentation
+ * attribute 優先度最低），確保全站圖示 stroke 粗細一致（1.5–2px 區間內取
+ * 1.75，對照 docs/ui-design-spec.md 的圖示規格）。 */
+.icon {
+  stroke-width: 1.75;
+  width: 20px;
+  height: 20px;
+}
+
+/* ---------- 頂部列 ---------- */
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 24px;
+  flex-wrap: wrap;
+}
+
+.topbar-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.topbar-brand h1 {
+  font-size: 24px;
+  font-weight: 700;
+}
+
+.topbar-brand .icon {
+  color: var(--primary);
+  width: 28px;
+  height: 28px;
+}
+
+.topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.last-updated {
+  font-size: 14px;
+  color: var(--fg-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.btn-refresh {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid var(--primary);
+  background: transparent;
+  color: var(--primary);
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 14px;
+  border-radius: 8px;
+  padding: 8px 16px;
+  cursor: pointer;
+  transition: background-color var(--transition-fast), color var(--transition-fast),
+    box-shadow var(--transition-fast);
+}
+
+.btn-refresh:hover:not(:disabled) {
+  background: var(--primary);
+  color: var(--primary-fg);
+}
+
+.btn-refresh:active:not(:disabled) {
+  box-shadow: inset 0 1px 4px rgba(0, 0, 0, .2);
+}
+
+.btn-refresh:disabled {
+  cursor: default;
+  opacity: 0.75;
+}
+
+.btn-refresh .icon {
+  width: 16px;
+  height: 16px;
+}
+
+.btn-refresh.is-loading .icon {
+  animation: spin 900ms linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .btn-refresh.is-loading .icon {
+    animation: none;
+  }
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* ---------- 通用可聚焦元素 focus ring ---------- */
+
+a, button, [tabindex] {
+  outline: none;
+}
+
+a:focus-visible,
+button:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+/* ---------- 橫幅（整體狀況 / 資訊提示） ---------- */
+
+.banner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0 24px 16px;
+  padding: 16px 20px;
+  border-radius: 12px;
+  font-size: 16px;
+}
+
+.banner-icon {
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+}
+
+.banner-text {
+  font-family: var(--font-heading);
+  font-weight: 600;
+  font-size: 18px;
+}
+
+.overall-banner.level-normal {
+  background: var(--status-normal-bg);
+  color: var(--status-normal-fg);
+}
+
+.overall-banner.level-attention {
+  background: var(--status-attention-bg);
+  color: var(--status-attention-fg);
+}
+
+.overall-banner.level-critical {
+  background: var(--status-critical-bg);
+  color: var(--status-critical-fg);
+}
+
+.overall-banner.level-unavailable {
+  background: var(--status-unavailable-bg);
+  color: var(--status-unavailable-fg);
+}
+
+.info-banner {
+  background: var(--info-bg);
+  color: var(--info-fg);
+}
+
+.info-banner .banner-text {
+  font-family: var(--font-body);
+  font-weight: 500;
+  font-size: 14px;
+  color: var(--fg);
+}
+
+.info-banner .info-link {
+  font-family: var(--font-body);
+  font-weight: 600;
+  color: var(--info-fg);
+  text-decoration: underline;
+}
+
+.info-banner[hidden] {
+  display: none;
+}
+
+/* ---------- 元件卡片格線 ---------- */
+
+.cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 16px;
+  padding: 0 24px 24px;
+  flex: 1;
+}
+
+.card {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: var(--card-shadow);
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+  opacity: 0;
+  transform: translateY(8px);
+  animation: card-enter var(--transition-normal) forwards;
+  animation-delay: calc(var(--stagger-index, 0) * 40ms);
+}
+
+@keyframes card-enter {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.card-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.card-title h2 {
+  font-size: 18px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.card-icon {
+  color: var(--primary);
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
+}
+
+.card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.device-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--fg-muted);
+  margin-top: 4px;
+}
+
+.device-divider {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 4px 0;
+}
+
+.metric-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.metric-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 14px;
+}
+
+.metric-line {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 14px;
+}
+
+.metric-label {
+  color: var(--fg-muted);
+  font-family: var(--font-body);
+  font-weight: 500;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+.metric-value {
+  font-family: var(--font-heading);
+  font-weight: 600;
+  font-size: 16px;
+  font-variant-numeric: tabular-nums;
+  color: var(--fg);
+  text-align: right;
+}
+
+.metric-value-full {
+  font-family: var(--font-body);
+  font-weight: 400;
+  font-size: 14px;
+  font-variant-numeric: normal;
+  text-align: left;
+  color: var(--fg-muted);
+  flex: 1;
+}
+
+.card-unavailable {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  color: var(--status-unavailable-fg);
+}
+
+.card-unavailable-icon {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.card-unavailable-text {
+  margin: 0;
+  font-size: 14px;
+  color: var(--fg-muted);
+  line-height: 1.6;
+}
+
+/* ---------- 狀態徽章（圖示 + 中文文字，不單靠顏色） ---------- */
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  font-family: var(--font-body);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.badge-icon {
+  width: 14px;
+  height: 14px;
+}
+
+.badge.badge-sm {
+  padding: 2px 8px;
+  font-size: 12px;
+}
+
+.badge.level-normal {
+  background: var(--status-normal-bg);
+  color: var(--status-normal-fg);
+}
+
+.badge.level-attention {
+  background: var(--status-attention-bg);
+  color: var(--status-attention-fg);
+}
+
+.badge.level-critical {
+  background: var(--status-critical-bg);
+  color: var(--status-critical-fg);
+}
+
+.badge.level-unavailable {
+  background: var(--status-unavailable-bg);
+  color: var(--status-unavailable-fg);
+}
+
+/* ---------- Loading skeleton ---------- */
+
+.card-skeleton {
+  gap: 10px;
+}
+
+.skeleton-line {
+  height: 14px;
+  border-radius: 6px;
+  background: var(--border);
+  opacity: 0.5;
+  animation: skeleton-pulse 1.2s ease-in-out infinite;
+}
+
+.skeleton-line-title {
+  width: 55%;
+  height: 20px;
+}
+
+.skeleton-line.short {
+  width: 40%;
+}
+
+@keyframes skeleton-pulse {
+  0%, 100% { opacity: 0.35; }
+  50% { opacity: 0.65; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton-line {
+    animation: none;
+    opacity: 0.5;
+  }
+}
+
+/* ---------- 小螢幕（<640px）：CSS Grid auto-fit 已自然收成單欄，
+   這裡只補強頁面邊距與避免橫向捲動 ---------- */
+
+@media (max-width: 640px) {
+  .topbar {
+    padding: 12px 16px;
+  }
+
+  .banner {
+    margin: 0 16px 12px;
+  }
+
+  .cards-grid {
+    padding: 0 16px 16px;
+  }
+}
