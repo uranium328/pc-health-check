@@ -1,105 +1,95 @@
-# 環境設定說明（手動操作指南）
+# 環境設定
 
-> 本文件給「要實際跑起這個骨架」的使用者看。目前這份專案只是**初始骨架**，
-> 尚未安裝任何相依套件、驅動或背景服務——這些都需要你自己手動操作，
-> 骨架本身**不會**自動安裝任何東西。
+這份文件教你怎麼把 PC Health Check 從原始碼跑起來。如果只是想用打包好的
+exe，不用看這份文件，照 README 的下載說明抓來用就好。
 
-鐵律提醒：本工具是**唯讀健康檢測**，不實作、不建議任何會修改韌體、
-BIOS/UEFI 設定、磁碟分割或驅動程式的操作。以下所有步驟也只涉及「安裝
-唯讀感測用途的驅動／函式庫」，不涉及任何寫入型操作。
+這個工具只讀取硬體感測資料，不會寫入或修改任何韌體、BIOS/UEFI 設定、
+磁碟分割或驅動程式設定。以下步驟裡唯一牽涉到安裝的東西是 PawnIO 驅動，
+用途也只是唯讀感測，不涉及任何寫入操作。
 
----
-
-## 1. 需要系統管理員（admin）權限執行
+## 1. 用系統管理員權限執行
 
 大部分硬體感測（主機板溫度/電壓/風扇、硬碟 SMART、部分記憶體/WMI 查詢）
-在 Windows 上**需要以系統管理員身分執行**才能拿到完整資料，非提權執行時
-常見結果是感測器清單為空、或 WMI 查詢回傳 "Unsupported"。
+在 Windows 上需要系統管理員權限才能拿到完整資料。沒用管理員權限執行的
+話，常見結果是感測器清單是空的，或 WMI 查詢直接回「Unsupported」。
 
-- 若要看到完整感測資料，請以「系統管理員身分執行」開啟終端機（PowerShell
-  或 cmd），再於該終端機內執行 `python src/pc_health_check/main.py`。
-- 若不用 admin 執行，本程式仍不會崩潰，只會誠實回報「不可用」與原因。
+- 想看到完整資料，就用「系統管理員身分執行」開啟 PowerShell 或 cmd，
+  再執行 `python src/pc_health_check/main.py`。
+- 沒用 admin 執行也沒關係，程式不會壞掉，只是會老實告訴你哪些項目
+  「不可用」以及原因。
 
-## 2. 安裝 LibreHardwareMonitor 所需的 PawnIO 驅動（需要你手動操作）
+## 2. 安裝 PawnIO 驅動
 
-本專案的核心感測引擎（`src/pc_health_check/engine.py`）透過 `HardwareMonitor`
-這個 PyPI 套件（內部使用 pythonnet 綁定 LibreHardwareMonitorLib.dll）讀取
-主機板/GPU/硬碟感測器。較新版的 LibreHardwareMonitor 底層改用 **PawnIO**
-這個核心驅動來做唯讀的硬體暫存器存取（取代舊有的 WinRing0）。
+這個工具的核心感測引擎是透過 `HardwareMonitor` 這個 Python 套件（底層用
+pythonnet 綁定 LibreHardwareMonitorLib.dll）讀取主機板/GPU/硬碟的感測器。
+比較新版的 LibreHardwareMonitor 改用 **PawnIO** 這個核心驅動做唯讀的硬體
+暫存器存取，取代了舊的 WinRing0。
 
-背景（已由使用者裁決）：安裝 PawnIO 驅動的用途僅限於唯讀感測數值讀取，
-不涉及任何寫入型操作；使用者已明確允許安裝此驅動。
+1. 到 PawnIO 官方網站 <https://pawnio.eu/> 下載安裝（安裝過程需要 admin
+   權限，會跳出 Windows 的驅動程式安裝確認畫面）。
+2. `pip install -r requirements.txt` 會順便裝好 `HardwareMonitor` 套件，
+   裡面附的 LibreHardwareMonitorLib.dll 不用另外處理，pythonnet 可以
+   直接載入。
+3. 沒裝這個驅動的話，`engine.get_engine()` 會回傳「還沒準備好」，對應的
+   感測器模組會顯示「不可用」跟原因，程式不會因此當掉。
 
-**這一步需要你自己手動操作，本骨架不會、也不能自動安裝：**
+## 3. Microsoft Store 版 Python 相容性
 
-1. 至 PawnIO 官方網站 <https://pawnio.eu/>（2026-07-05 查證，LibreHardwareMonitor
-   專案已改用此驅動取代舊有 WinRing0）下載並安裝 PawnIO 核心驅動（安裝過程
-   需要 admin 權限，會跳出 Windows 驅動程式安裝確認）。
-2. `pip install -r requirements.txt` 會一併裝好 `HardwareMonitor` 套件，
-   其內附的 LibreHardwareMonitorLib.dll 已實測可被 pythonnet 正常載入，
-   不需要額外手動放置 DLL 檔案。
-3. 若上述步驟未完成，`engine.get_engine()` 會回傳 `ready=False`，各
-   sensors 模組會各自顯示「不可用」與具體原因，`main.py` 不會因此崩潰。
+如果你用的是 Microsoft Store 版 Python（site-packages 路徑裡會有
+`PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0` 這種字樣）：實測過
+pythonnet 在這個環境下可以正常載入 LibreHardwareMonitorLib.dll，不會因為
+Store 版的應用程式沙箱而失敗，可以放心直接用。
 
-## 3. Microsoft Store 版 Python 的 pythonnet 相容性
+如果還是遇到 DLL 載入、CLR 初始化，或「找不到組件」之類的例外
+（`engine.py` 會攔截起來，顯示在主機板/硬碟/顯示卡的「不可用原因」欄位
+裡），可以照這個順序排查：
 
-若你的 Python 是 **Microsoft Store 版**（site-packages 路徑含
-`PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0`）：已實測確認
-`pythonnet` 在這個環境下能正常載入 LibreHardwareMonitorLib.dll，不會
-因為 Store 版的應用程式沙箱/檔案系統重新導向而失敗，可以放心直接用。
+1. 確認有沒有用系統管理員身分執行。
+2. 確認 `pip install -r requirements.txt` 有在同一個 Python 環境裝好
+   `pythonnet` 和 `HardwareMonitor`（`pip show pythonnet` 看一下）。
+3. 還是不行的話，換官方 python.org 版的 Python 3.13（不是 Store 版）
+   重新建一個虛擬環境試試看。
 
-若你仍遇到與 DLL 載入、CLR 初始化、或「找不到組件」相關的例外
-（`engine.py` 會攔截並顯示在「主機板/硬碟/顯示卡」的不可用原因欄位中），
-建議依序排查：
-
-1. 確認是否以系統管理員身分執行。
-2. 確認 `pip install -r requirements.txt` 是否在同一個 Python 環境下成功
-   安裝了 `pythonnet` 與 `HardwareMonitor`（`pip show pythonnet` 檢查）。
-3. 若仍無法解決，改用官方 python.org 發行版的 Python 3.13（非 Store 版）
-   重新建立虛擬環境後再試。
-
-## 4. 安裝相依套件與執行程式
+## 4. 安裝套件、執行程式
 
 ```powershell
-# 於專案根目錄 E:/program/pc-health-check/ 下執行
+# 在專案根目錄 E:/program/pc-health-check/ 下執行
 pip install -r requirements.txt
 
 python src/pc_health_check/main.py
 ```
 
-- 若你是以一般（非 admin）身分、且尚未安裝上述套件與驅動的狀態下執行，
-  預期會看到每個元件顯示「狀態：不可用」與對應原因（例如「未安裝
-  'HardwareMonitor' 套件」「未安裝 'wmi' 套件」等），這是**預期中的優雅
-  降級行為**，不是程式錯誤。
-- 若要重新產生完整報告，請依序完成本文件第 1～3 節後再執行。
+如果是一般身分執行、也還沒裝上面的套件跟驅動，每個元件會顯示「不可用」
+跟原因（像是「未安裝 'HardwareMonitor' 套件」），這是正常的降級行為，
+不是程式壞掉。想看到完整報告，先照第 1～3 節把權限、驅動、環境都弄好
+再執行。
 
-## 5. 各元件資料來源與已知限制（誠實摘要）
+## 5. 各元件的資料來源與限制
 
-| 元件 | 主要資料來源 | 已知限制 |
+| 元件 | 資料來源 | 限制 |
 |---|---|---|
-| 主機板 | LibreHardwareMonitor（`engine.py`） | 需 PawnIO 驅動 + admin，未安裝時顯示不可用 |
-| 記憶體 | `wmi`（`Win32_PhysicalMemory`） | 僅庫存資訊（容量/頻率/製造商），消費級 RAM 無健康度可讀 |
-| 硬碟 | LibreHardwareMonitor 儲存裝置感測 | 涵蓋度依裝置/版本而異；未來可考慮改用 pySMART + smartmontools |
-| 電源供應器 | LibreHardwareMonitor（若偵測到 PSU 硬體項目） | 一般 PSU 無軟體可讀資訊，僅少數智慧型號（如部分 Corsair）可能可讀，預設視為不可用 |
-| 顯示卡 | LibreHardwareMonitor（多廠牌）＋ 可選 `nvidia-ml-py`（僅 NVIDIA） | NVML 補充資訊為可選功能，找不到 NVIDIA 裝置或未安裝套件會優雅降級 |
+| 主機板 | LibreHardwareMonitor | 需要 PawnIO 驅動 + admin 權限，沒裝就顯示不可用 |
+| 記憶體 | WMI（`Win32_PhysicalMemory`） | 只有容量/頻率/製造商這些庫存資訊，一般消費級 RAM 讀不到健康度 |
+| 硬碟 | LibreHardwareMonitor 的儲存裝置感測 | 涵蓋度依裝置/廠牌而異 |
+| 電源供應器 | LibreHardwareMonitor（如果偵測到 PSU） | 大多數 PSU 沒有軟體可讀資訊，只有少數智慧型號（部分 Corsair）可能讀得到，其餘預設不可用 |
+| 顯示卡 | LibreHardwareMonitor，NVIDIA 另外用 `nvidia-ml-py` 補充 | 找不到 NVIDIA 裝置或沒裝套件時會自動降級，不影響其他元件 |
 
-## 6. 如何啟動圖形介面（GUI）版本
+## 6. 啟動 GUI 版本
 
-除了第 4 節的 CLI 版本，本專案也提供一個 pywebview 桌面 GUI 骨架，把同一份
-健康報告（仍是 `report.py`/`health.py` 產出的資料，GUI 只負責呈現，判讀邏輯
-不重做）用本地網頁儀表板呈現，方便非工程師使用者閱讀。
+除了上面的 CLI，這個工具也有一個 pywebview 桌面 GUI，用同一份資料
+（`report.py`/`health.py` 產生的結果，GUI 只負責畫面呈現，判讀邏輯完全
+共用）畫成一個本地網頁儀表板，比較適合不熟終端機的人用。
 
 ```powershell
-# 於專案根目錄 E:/program/pc-health-check/ 下執行
-pip install -r requirements.txt   # 已包含 pywebview，若已裝過可省略
+pip install -r requirements.txt   # 已經包含 pywebview，裝過可以跳過
 
 python src/pc_health_check/ui/app.py
 ```
 
-- 與 CLI 版本相同的優雅降級原則：即使目前是非 admin、尚未安裝 PawnIO 驅動
-  （sensors 完全讀不到資料的狀態），視窗仍會正常開啟，並在畫面上以中性提示
-  橫幅顯示「不可用＋原因」，不會跳出 Python traceback 或整個視窗崩潰。
-- 視窗右上角「重新整理」按鈕會重新呼叫 `generate_report()`，抓取最新的硬體
-  狀態；關閉視窗即結束整個程式，不會留下背景殘留行程。
-- 若要看到完整感測資料，同樣需要滿足第 1～2 節（admin 權限、PawnIO 驅動）
-  的前提，GUI 版本與 CLI 版本共用同一套資料層，沒有另外的權限或安裝需求。
+- 跟 CLI 一樣會優雅降級：就算目前沒用 admin、沒裝 PawnIO 驅動，視窗
+  還是會正常開啟，畫面上會用提示橫幅顯示「不可用＋原因」，不會跳出
+  錯誤訊息或整個崩潰。
+- 右上角的「重新整理」按鈕會重新抓一次最新的硬體狀態；關掉視窗程式就
+  整個結束，不會留下背景行程。
+- 想看到完整資料，一樣要先滿足第 1～2 節的權限跟驅動需求，GUI 跟 CLI
+  共用同一套資料層。
